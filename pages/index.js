@@ -28,8 +28,12 @@ function Title(props) {
 }
 
 export default function PaginaInicial() {
-  const [username, setUsername] = useState();
+  const [username, setUsername] = useState("");
   const router = useRouter();
+  const [data, setData] = useState([]);
+  const imagemError =
+    "https://png.pngitem.com/pimgs/s/214-2142530_kawaii-blue-sad-eyes-eye-blush-face-caritas.png";
+
   return (
     <>
       <Box
@@ -99,6 +103,11 @@ export default function PaginaInicial() {
                 console.log("usuario ", event.target.value);
                 const valor = event.target.value;
                 setUsername(valor);
+                fetch(`https://api.github.com/users/${valor}`)
+                  .then((r) => r.json())
+                  .then((data) => {
+                    setData(data);
+                  });
               }}
               fullWidth
               textFieldColors={{
@@ -110,18 +119,27 @@ export default function PaginaInicial() {
                 },
               }}
             />
-
-            <Button
-              type="submit"
-              label="Entrar"
-              fullWidth
-              buttonColors={{
-                contrastColor: appConfig.theme.colors.neutrals["400"],
-                mainColor: appConfig.theme.colors.primary[500],
-                mainColorLight: appConfig.theme.colors.primary[400],
-                mainColorStrong: appConfig.theme.colors.primary[600],
-              }}
-            />
+            {username.length > 2 &&
+              username.length !== null &&
+              username.trim() && (
+                <Button
+                  type="submit"
+                  label="Entrar"
+                  fullWidth
+                  buttonColors={{
+                    contrastColor: appConfig.theme.colors.neutrals["400"],
+                    mainColor: appConfig.theme.colors.primary[500],
+                    mainColorLight: appConfig.theme.colors.primary[400],
+                    mainColorStrong: appConfig.theme.colors.primary[600],
+                  }}
+                  styleSheet={{
+                    color: appConfig.theme.colors.primary[1000],
+                    hover: {
+                      boxShadow: " 0 0 2em rgb( 252,187,255,0.75)",
+                    },
+                  }}
+                />
+              )}
             <br></br>
             <a href="https://github.com/lusntgo">
               <Icon
@@ -157,7 +175,13 @@ export default function PaginaInicial() {
                 borderRadius: "50%",
                 marginBottom: "16px",
               }}
-              src={`https://github.com/${username}.png`}
+              src={
+                username.length > 2 &&
+                username.length !== null &&
+                username.trim()
+                  ? `https://github.com/${username}.png`
+                  : imagemError
+              }
             />
             <Text
               variant="body4"
@@ -168,7 +192,11 @@ export default function PaginaInicial() {
                 borderRadius: "1000px",
               }}
             >
-              {username}
+              {username.length > 2 &&
+              username.length !== null &&
+              username.trim()
+                ? username
+                : "O campo está vazio!"}
             </Text>
           </Box>
           {/* Photo Area */}
