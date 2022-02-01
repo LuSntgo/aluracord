@@ -1,24 +1,24 @@
 import {
   Box,
-  Icon,
   Button,
+  Icon,
   Text,
   TextField,
   Image,
 } from "@skynexui/components";
-import { useState } from "react";
-import appConfig from "../config.json";
-import React from "react";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import appConfig from "../config.json";
 
-function Title(props) {
+function Titulo(props) {
   const Tag = props.tag || "h1";
+
   return (
     <>
       <Tag>{props.children}</Tag>
       <style jsx>{`
         ${Tag} {
-          color: ${appConfig.theme.colors.neutrals["000"]};
+          color: ${appConfig.theme.colors.primary["900"]};
           font-size: 24px;
           font-weight: 600;
         }
@@ -28,22 +28,36 @@ function Title(props) {
 }
 
 export default function PaginaInicial() {
+  const [github, setGithub] = useState("");
   const [username, setUsername] = useState("");
-  const router = useRouter();
-  const [data, setData] = useState([]);
-  const imagemError =
-    "https://png.pngitem.com/pimgs/s/214-2142530_kawaii-blue-sad-eyes-eye-blush-face-caritas.png";
+  const root = useRouter();
+  const image = "https://i.ibb.co/YTh7RG6/ghibl.jpg";
+
+  useEffect(() => {
+    fetch(`https://api.github.com/users/${username}`)
+      .then((response) => {
+        return response.json();
+      })
+      .then((result) => {
+        setGithub(result);
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+  }, [username]);
 
   return (
     <>
       <Box
         styleSheet={{
+          width: "100%",
+          height: "100vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: appConfig.theme.colors.primary[500],
+          backgroundColor: appConfig.theme.colors.primary["500"],
           backgroundImage:
-            "url(https://i.dlpng.com/static/png/6641954_preview.png)",
+            "url(http://static.simpledesktops.com/uploads/desktops/2010/07/02/totoro.png)",
           backgroundRepeat: "no-repeat",
           backgroundSize: "cover",
           backgroundBlendMode: "multiply",
@@ -60,20 +74,25 @@ export default function PaginaInicial() {
             },
             width: "100%",
             maxWidth: "700px",
-            borderRadius: "5px",
             padding: "32px",
             margin: "16px",
-            boxShadow: "0 2px 10px 0 rgb(0 0 0 / 20%)",
-            backgroundColor: appConfig.theme.colors.neutrals[700],
+            backgroundColor: "rgba(0, 0, 0, 0.63)",
+            border: "1px solid rgba(0, 0, 0, 0.88)",
+            borderColor: appConfig.theme.colors.neutrals[999],
+            borderRadius: "16px",
+            flex: 1,
+            minHeight: "240px",
+            boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+            backdropFilter: "blur(2.6px)",
+            webkitBackdropFilter: "blur(2.6px)",
           }}
         >
           {/* Formulário */}
           <Box
             as="form"
-            onSubmit={function (infosDoEvento) {
-              infosDoEvento.preventDefault();
-              console.log("Alguém submeteu o form");
-              router.push("/chat");
+            onSubmit={function (event) {
+              event.preventDefault();
+              root.push(`/chat?username=${username}`);
             }}
             styleSheet={{
               display: "flex",
@@ -85,29 +104,24 @@ export default function PaginaInicial() {
               marginBottom: "32px",
             }}
           >
-            <Title tag="h2">Welcome back!</Title>
-
+            <Titulo tag="h2">Bem vindo ao Ghiblicord!</Titulo>
             <Text
               variant="body3"
               styleSheet={{
                 marginBottom: "32px",
-                color: appConfig.theme.colors.neutrals[300],
+                color: appConfig.theme.colors.neutrals["050"],
+                fontWeight: "bold",
               }}
             >
               {appConfig.name}
             </Text>
-
             <TextField
+              required
+              placeholder="Informe seu usuário do Github"
               value={username}
               onChange={function (event) {
-                console.log("usuario ", event.target.value);
                 const valor = event.target.value;
                 setUsername(valor);
-                fetch(`https://api.github.com/users/${valor}`)
-                  .then((r) => r.json())
-                  .then((data) => {
-                    setData(data);
-                  });
               }}
               fullWidth
               textFieldColors={{
@@ -119,27 +133,24 @@ export default function PaginaInicial() {
                 },
               }}
             />
-            {username.length > 2 &&
-              username.length !== null &&
-              username.trim() && (
-                <Button
-                  type="submit"
-                  label="Entrar"
-                  fullWidth
-                  buttonColors={{
-                    contrastColor: appConfig.theme.colors.neutrals["400"],
-                    mainColor: appConfig.theme.colors.primary[500],
-                    mainColorLight: appConfig.theme.colors.primary[400],
-                    mainColorStrong: appConfig.theme.colors.primary[600],
-                  }}
-                  styleSheet={{
-                    color: appConfig.theme.colors.primary[1000],
-                    hover: {
-                      boxShadow: " 0 0 2em rgb( 252,187,255,0.75)",
-                    },
-                  }}
-                />
-              )}
+
+            <Button
+              type="submit"
+              label="Entrar"
+              fullWidth
+              buttonColors={{
+                contrastColor: appConfig.theme.colors.neutrals["400"],
+                mainColor: appConfig.theme.colors.primary[500],
+                mainColorLight: appConfig.theme.colors.primary[400],
+                mainColorStrong: appConfig.theme.colors.primary[600],
+              }}
+              styleSheet={{
+                color: appConfig.theme.colors.primary[1000],
+                hover: {
+                  boxShadow: " 0 0 2em rgb( 252,187,255,0.75)",
+                },
+              }}
+            />
             <br></br>
             <a href="https://github.com/lusntgo">
               <Icon
@@ -151,6 +162,7 @@ export default function PaginaInicial() {
                 }}
               />
             </a>
+            <br></br>
           </Box>
           {/* Formulário */}
 
@@ -162,12 +174,15 @@ export default function PaginaInicial() {
               alignItems: "center",
               maxWidth: "200px",
               padding: "16px",
-              backgroundColor: appConfig.theme.colors.neutrals[800],
-              border: "1px solid",
+              backgroundColor: "rgba(0, 0, 0, 0.23)",
+              border: "1px solid rgba(0, 0, 0, 0.88)",
               borderColor: appConfig.theme.colors.neutrals[999],
-              borderRadius: "10px",
+              borderRadius: "16px",
               flex: 1,
               minHeight: "240px",
+              boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+              backdropFilter: "blur(4.7px)",
+              webkitBackdropFilter: "blur(4.7px)",
             }}
           >
             <Image
@@ -176,11 +191,9 @@ export default function PaginaInicial() {
                 marginBottom: "16px",
               }}
               src={
-                username.length > 2 &&
-                username.length !== null &&
-                username.trim()
+                username.length > 2
                   ? `https://github.com/${username}.png`
-                  : imagemError
+                  : image
               }
             />
             <Text
@@ -189,14 +202,50 @@ export default function PaginaInicial() {
                 color: appConfig.theme.colors.neutrals[200],
                 backgroundColor: appConfig.theme.colors.neutrals[900],
                 padding: "3px 10px",
-                borderRadius: "1000px",
+                borderRadius: "10px",
               }}
             >
-              {username.length > 2 &&
-              username.length !== null &&
-              username.trim()
-                ? username
-                : "O campo está vazio!"}
+              {username.length > 2 ? (
+                <Text
+                  tag="a"
+                  href={`https://github.com/${username}`}
+                  target="_blank"
+                  styleSheet={{
+                    color: appConfig.theme.colors.neutrals[200],
+                    fontSize: "12px",
+                    textDecoration: "none",
+                    hover: {
+                      color: appConfig.theme.colors.primary[500],
+                    },
+                  }}
+                >
+                  {github.name}
+                </Text>
+              ) : (
+                ""
+              )}
+            </Text>
+            <Text
+              variant="body4"
+              styleSheet={{
+                color: appConfig.theme.colors.neutrals["200"],
+                padding: "3px 10px",
+                borderRadius: "1000px",
+                marginTop: "8px",
+              }}
+            >
+              {username.length > 2 ? github.location : ""}
+            </Text>
+            <Text
+              variant="body4"
+              styleSheet={{
+                color: appConfig.theme.colors.neutrals["200"],
+                padding: "3px 10px",
+                borderRadius: "1000px",
+                marginTop: "8px",
+              }}
+            >
+              {username.length > 2 ? `Followers: ${github.followers}` : ""}
             </Text>
           </Box>
           {/* Photo Area */}

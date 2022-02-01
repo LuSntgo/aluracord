@@ -1,21 +1,83 @@
-import { Box, Text, TextField, Image, Button } from "@skynexui/components";
-import React from "react";
+import {
+  Box,
+  Text,
+  TextField,
+  Image,
+  Button,
+  Icon,
+} from "@skynexui/components";
+import React, { useEffect, useState } from "react";
+import { Bars } from "react-loading-icons";
+import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/router";
+// import Popover from "@material-ui/core/Popover";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabase";
 import appConfig from "../config.json";
+import { ButtonSticker } from "../src/components/ButtonSticker";
+
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
-  const [message, setMessage] = React.useState("");
-  const [listMessage, setListMessage] = React.useState([]);
+  const root = useRouter();
+  const userLogged = root.query.username;
+
+  const [message, setMessage] = useState("");
+  const [chat, setChat] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  function catchMessageRealTime(addMessage) {
+    return supabaseClient
+      .from("messages")
+      .on("INSERT", (data) => {
+        addMessage(data.new);
+      })
+      .subscribe();
+  }
+
+  useEffect(() => {
+    setTimeout(() => {
+      supabaseClient
+        .from("messages")
+        .select("*")
+        .order("id", { ascending: false })
+        .then(({ data }) => {
+          setChat(data);
+        });
+      setLoading(false);
+
+      catchMessageRealTime((newMessage) => {
+        setChat((actualValue) => {
+          return [newMessage, ...actualValue];
+        });
+      });
+    }, 3000);
+  }, []);
 
   function handleNewMessage(newMessage) {
-    const message = {
-      id: listMessage.length + 1,
-      from: "lusntgo",
+    const mess = {
+      from: userLogged,
       text: newMessage,
     };
 
-    setListMessage([message, ...listMessage]);
+    supabaseClient
+      .from("messages")
+      .insert([mess])
+      .then(({}) => {});
     setMessage("");
   }
+  React.useEffect(() => {
+    supabaseClient
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data != null) {
+          setChat(data);
+        }
+
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <Box
@@ -24,12 +86,12 @@ export default function ChatPage() {
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: appConfig.theme.colors.primary[500],
-        backgroundImage: `url(https://i.dlpng.com/static/png/6641954_preview.png)`,
+        backgroundImage:
+          "url(http://static.simpledesktops.com/uploads/desktops/2010/07/02/totoro.png)",
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
         backgroundBlendMode: "multiply",
         color: appConfig.theme.colors.neutrals["000"],
-        overflow: "hidden",
       }}
     >
       <Box
@@ -38,13 +100,18 @@ export default function ChatPage() {
           flexDirection: "column",
           flex: 1,
           boxShadow: "0 2px 10px 0 rgb(0 0 0 / 20%)",
-          borderRadius: "5px",
-          backgroundColor: appConfig.theme.colors.neutrals[700],
-          height: "80%",
-          maxWidth: "80%",
+          height: "100%",
+          maxWidth: "95%",
           maxHeight: "95vh",
           padding: "32px",
-          overflow: "hidden",
+          backgroundColor: "rgba(199, 185, 207, 0.81)",
+          border: "2px solid rgba(253, 140, 226, 0.81)",
+          borderColor: appConfig.theme.colors.primary[400],
+          borderRadius: "16px",
+          minHeight: "240px",
+          boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+          backdropFilter: "blur(2.6px)",
+          webkitBackdropFilter: "blur(2.6px)",
         }}
       >
         <Header />
@@ -54,21 +121,36 @@ export default function ChatPage() {
             display: "flex",
             flex: 1,
             height: "80%",
-            backgroundColor: appConfig.theme.colors.neutrals[600],
             flexDirection: "column",
-            borderRadius: "5px",
             padding: "16px",
-            overflow: "hidden",
+            backgroundColor: "rgba(72, 30, 30, 0.74)",
+            border: "1px solid rgba(0, 0, 0, 0.88)",
+            borderColor: appConfig.theme.colors.primary[400],
+            borderRadius: "16px",
+            boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+            backdropFilter: "blur(2.6px)",
+            webkitBackdropFilter: "blur(2.6px)",
           }}
         >
-          <MessageList messages={listMessage} />
-          {/* {listaDeMensagens.map((mensagemAtual) => {
-                    return (
-                        <li key={mensagemAtual.id}>
-                            {mensagemAtual.de}: {mensagemAtual.texto}
-                        </li>
-                    )
-                })} */}
+          {loading ? (
+            <Box
+              styleSheet={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+              }}
+            >
+              <Bars
+                fill={appConfig.theme.colors.primary["900"]}
+                height="16px"
+              />
+            </Box>
+          ) : (
+            <MessageList chatMessages={chat} setChat={setChat} />
+          )}
+
           <Box
             as="form"
             styleSheet={{
@@ -88,7 +170,7 @@ export default function ChatPage() {
                   handleNewMessage(message);
                 }
               }}
-              placeholder="Insira sua mensagem aqui..."
+              placeholder="Digite a sua mensagem aqui..."
               type="textarea"
               styleSheet={{
                 width: "100%",
@@ -99,6 +181,20 @@ export default function ChatPage() {
                 backgroundColor: appConfig.theme.colors.neutrals[800],
                 marginRight: "12px",
                 color: appConfig.theme.colors.neutrals[200],
+              }}
+            />
+            <ButtonSticker
+              onStickerClick={(sticker) => {
+                handleNewMessage(":sticker:" + sticker);
+              }}
+            />
+            <Button
+              variant="primary"
+              colorVariant="positive"
+              label="Enviar"
+              onClick={(event) => {
+                event.preventDefault();
+                handleNewMessage(message);
               }}
             />
           </Box>
@@ -113,6 +209,7 @@ function Header() {
     <>
       <Box
         styleSheet={{
+          display: "flex",
           width: "100%",
           marginBottom: "16px",
           display: "flex",
@@ -120,10 +217,19 @@ function Header() {
           justifyContent: "space-between",
         }}
       >
-        <Text variant="heading5">Chat</Text>
+        <Text
+          variant="heading5"
+          styleSheet={{
+            fontFamily: "Poppins",
+            fontSize: "20px",
+            color: appConfig.theme.colors.primary[900],
+          }}
+        >
+          AluracordGhibli - Chat:
+        </Text>
         <Button
           variant="tertiary"
-          colorVariant="neutral"
+          colorVariant="negative"
           label="Logout"
           href="/"
         />
@@ -133,6 +239,11 @@ function Header() {
 }
 
 function MessageList(props) {
+  function handleRemove(id) {
+    const list = props.chatMessages.filter((mensagem) => mensagem.id !== id);
+    props.setChat(list);
+  }
+
   return (
     <Box
       tag="ul"
@@ -143,13 +254,14 @@ function MessageList(props) {
         flex: 1,
         color: appConfig.theme.colors.neutrals["000"],
         marginBottom: "16px",
+        overflowX: "hidden",
       }}
     >
-      {props.messages.map((message) => {
+      {props.chatMessages.map((message) => {
         return (
           <Text
-            key={message.id}
             tag="li"
+            key={message.id}
             styleSheet={{
               borderRadius: "5px",
               padding: "6px",
@@ -172,10 +284,22 @@ function MessageList(props) {
                   display: "inline-block",
                   marginRight: "8px",
                 }}
-                src={`https://github.com/lusntgo.png`}
+                src={`https://github.com/${message.from}.png`}
               />
-
-              <Text tag="strong">{message.from}</Text>
+              <Text
+                tag="a"
+                href={`https://github.com/${message.from}`}
+                target="_blank"
+                styleSheet={{
+                  color: appConfig.theme.colors.neutrals[200],
+                  textDecoration: "none",
+                  hover: {
+                    color: appConfig.theme.colors.primary[500],
+                  },
+                }}
+              >
+                {message.from}
+              </Text>
               <Text
                 styleSheet={{
                   fontSize: "10px",
@@ -184,10 +308,41 @@ function MessageList(props) {
                 }}
                 tag="span"
               >
-                {new Date().toLocaleDateString()}
+                {new Date(message.created_at).toLocaleString("pt-BR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}
               </Text>
+              <Icon
+                styleSheet={{
+                  width: "15px",
+                  height: "15px",
+                  marginLeft: "95%",
+                  borderRadius: "50%",
+                  display: "inline-block",
+                  marginRight: "8px",
+                  cursor: "pointer",
+                  hover: {
+                    backgroundColor: appConfig.theme.colors.primary[500],
+                  },
+                }}
+                onClick={() => {
+                  handleRemove(message.id);
+                }}
+                name="FaTrashAlt"
+                variant="tertiary"
+                colorVariant="neutral"
+              />
             </Box>
-            {message.text}
+            {message.text.startsWith(":sticker:") ? (
+              <Image
+                src={message.text.replace(":sticker:", "")}
+                width="150"
+                height="150"
+              />
+            ) : (
+              message.text
+            )}
           </Text>
         );
       })}

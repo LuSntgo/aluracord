@@ -1,3 +1,5 @@
+import Head from "next/head";
+
 function GlobalStyle() {
   return (
     <style global jsx>{`
@@ -8,7 +10,7 @@ function GlobalStyle() {
         list-style: none;
       }
       body {
-        font-family: "Open Sans", sans-serif;
+        font-family: "Poppins", sans-serif;
       }
       /* App fit Height */
       html,
@@ -29,9 +31,14 @@ function GlobalStyle() {
   );
 }
 
-export default function CustomApp({ Component, pageProps }) {
+export default function MyApp({ Component, pageProps }) {
   return (
     <>
+      <Head>
+        <meta charSet="utf-8" />
+        <link rel="icon" href="../public/favicon.ico" />
+        <title>AluracordGhibli</title>
+      </Head>
       <GlobalStyle />
       <Component {...pageProps} />
     </>
